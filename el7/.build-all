@@ -18,13 +18,23 @@ tar -xf /tmp/zlib-*.el7.x86_64.tar.xz -C /
 sleep 1
 mv -f /tmp/zlib-*.el7.x86_64.tar.xz "${_output_dir}"/
 
-bash build-ssl-1.1.1.sh
-rm -fr /usr/local/openssl-1.1.1
-tar -xf /tmp/openssl-*.el7.x86_64.tar.xz -C /
-bash /usr/local/openssl-1.1.1/.install.txt
-/sbin/ldconfig >/dev/null 2>&1
-sleep 1
-mv -f /tmp/openssl-*.el7.x86_64.tar.xz "${_output_dir}"/
+if [[ "${1}" == 'nossl' || "${1}" == 'no-ssl' || "${1}" == 'without-ssl' || "${1}" == 'withoutssl' ]]; then
+    if [[ -f build-ssl-1.1.1.sh && ! -f build-ssl-1.1.1.sh.bak ]]; then
+        mv -f build-ssl-1.1.1.sh build-ssl-1.1.1.sh.bak
+    fi
+fi
+if [[ -f build-ssl-1.1.1.sh ]]; then
+    bash build-ssl-1.1.1.sh
+    rm -fr /usr/local/openssl-1.1.1
+    tar -xf /tmp/openssl-*.el7.x86_64.tar.xz -C /
+    bash /usr/local/openssl-1.1.1/.install.txt
+    /sbin/ldconfig >/dev/null 2>&1
+    sleep 1
+    mv -f /tmp/openssl-*.el7.x86_64.tar.xz "${_output_dir}"/
+fi
+if [[ -f build-ssl-1.1.1.sh.bak && ! -f build-ssl-1.1.1.sh ]]; then
+    mv -f build-ssl-1.1.1.sh.bak build-ssl-1.1.1.sh
+fi
 
 bash build-libedit.sh
 tar -xf /tmp/libedit-*.el7.x86_64.tar.xz -C /
