@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+TZ='UTC'; export TZ
+/sbin/ldconfig >/dev/null 2>&1
+
+umask 022
+
+set -e
+
+cd "$(dirname "$0")"
+
+_output_dir='/tmp/_output/tarpackage'
+mkdir -p "${_output_dir}"
+
+bash build-zlib.sh
+tar -xf /tmp/zlib-*.el8.x86_64.tar.xz -C /
+/sbin/ldconfig >/dev/null 2>&1
+sleep 1
+mv -f /tmp/zlib-*.el8.x86_64.tar.xz "${_output_dir}"/
+
+bash build-libedit.sh
+tar -xf /tmp/libedit-*.el8.x86_64.tar.xz -C /
+/sbin/ldconfig >/dev/null 2>&1
+sleep 1
+mv -f /tmp/libedit-*.el8.x86_64.tar.xz "${_output_dir}"/
+
+bash build-sqlite.sh
+tar -xf /tmp/sqlite-*.el8.x86_64.tar.xz -C /
+/sbin/ldconfig >/dev/null 2>&1
+sleep 1
+mv -f /tmp/sqlite-*.el8.x86_64.tar.xz "${_output_dir}"/
+
+bash build-libssh2.sh
+tar -xf /tmp/libssh2-*.el8.x86_64.tar.xz -C /
+/sbin/ldconfig >/dev/null 2>&1
+sleep 1
+mv -f /tmp/libssh2-*.el8.x86_64.tar.xz "${_output_dir}"/
+
+bash build-pcre.sh
+tar -xf /tmp/pcre-*.el8.x86_64.tar.xz -C /
+/sbin/ldconfig >/dev/null 2>&1
+sleep 1
+mv -f /tmp/pcre-*.el8.x86_64.tar.xz "${_output_dir}"/
+
+bash build-pcre2.sh
+tar -xf /tmp/pcre2-*.el8.x86_64.tar.xz -C /
+/sbin/ldconfig >/dev/null 2>&1
+sleep 1
+mv -f /tmp/pcre2-*.el8.x86_64.tar.xz "${_output_dir}"/
+
+echo
+printf '\033[01;32m%s\033[m\n' ' all done'
+echo
+/sbin/ldconfig >/dev/null 2>&1
+exit
+
