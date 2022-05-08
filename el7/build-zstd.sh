@@ -66,7 +66,6 @@ cd "${_tmp_dir}"
 git clone "https://github.com/facebook/zstd.git"
 sleep 1
 cd zstd
-sleep 1
 
 find ./ -iname Makefile | xargs -I "{}" sed 's@prefix.*?= /usr/local@prefix      ?= /usr@g' -i "{}"
 sed '/^libdir/s|)/lib$|)/lib64|g' -i lib/Makefile
