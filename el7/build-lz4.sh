@@ -66,7 +66,6 @@ cd "${_tmp_dir}"
 git clone "https://github.com/lz4/lz4.git"
 sleep 1
 cd lz4
-sleep 1
 
 find ./ -iname Makefile | xargs -I "{}" sed 's@PREFIX.*?= /usr/local@PREFIX      ?= /usr@g' -i "{}"
 sed 's@LIBDIR.*?= $(exec_prefix)/lib$@LIBDIR      ?= $(exec_prefix)/lib64@'  -i lib/Makefile
