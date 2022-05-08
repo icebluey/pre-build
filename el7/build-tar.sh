@@ -70,7 +70,6 @@ tar -xf tar-${_tar_ver}.tar.*
 sleep 1
 rm -f tar-*.tar*
 cd tar-*
-sleep 1
 
 ./configure \
 DEFAULT_ARCHIVE_FORMAT=GNU \
