@@ -86,6 +86,11 @@ tar -xf /tmp/tar-*.el7.x86_64.tar.xz -C /
 sleep 1
 mv -f /tmp/tar-*.el7.x86_64.tar.xz "${_output_dir}"/
 
+bash build-chrony-in-a-container.sh
+/sbin/ldconfig >/dev/null 2>&1
+sleep 1
+mv -f /tmp/chrony-*.el7.x86_64.tar.xz "${_output_dir}"/
+
 echo
 printf '\033[01;32m%s\033[m\n' ' all done'
 echo
