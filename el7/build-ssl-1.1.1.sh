@@ -12,8 +12,9 @@ umask 022
 #LDFLAGS='-Wl,-z,relro -Wl,--as-needed -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld'
 #export LDFLAGS
 
-LDFLAGS='-Wl,-rpath,/usr/local/openssl-1.1.1/lib'
-export LDFLAGS
+# Do not use rpath for openssl 1.1.1 in el7
+#LDFLAGS='-Wl,-rpath,/usr/local/openssl-1.1.1/lib'
+#export LDFLAGS
 
 CC=gcc
 export CC
