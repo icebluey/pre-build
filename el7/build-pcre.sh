@@ -62,10 +62,10 @@ set -e
 _tmp_dir="$(mktemp -d)"
 cd "${_tmp_dir}"
 
-#https://iweb.dl.sourceforge.net/project/pcre/pcre/8.45/pcre-8.45.tar.bz2
+#https://versaweb.dl.sourceforge.net/project/pcre/pcre/8.45/pcre-8.45.tar.bz2
 #https://jaist.dl.sourceforge.net/project/pcre/pcre/8.45/pcre-8.45.tar.bz2
 _pcre_ver="$(wget -qO- 'https://sourceforge.net/projects/pcre/files/pcre/' | grep 'href="/projects/pcre/files/pcre/[1-9]' | sed 's|"|\n|g' | grep '^/projects/pcre/files/pcre/[1-9]' | grep '[0-9]/$' | sed 's|.*pcre/||g' | sed 's|/||g' | sort -V | uniq | tail -n 1)"
-wget -c -t 9 -T 9 "https://iweb.dl.sourceforge.net/project/pcre/pcre/${_pcre_ver}/pcre-${_pcre_ver}.tar.bz2"
+wget -c -t 9 -T 9 "https://versaweb.dl.sourceforge.net/project/pcre/pcre/${_pcre_ver}/pcre-${_pcre_ver}.tar.bz2"
 sleep 1
 tar -xf pcre-${_pcre_ver}.tar.*
 sleep 1
