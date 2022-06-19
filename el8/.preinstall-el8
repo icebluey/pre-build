@@ -12,8 +12,10 @@ dnf config-manager --set-enabled powertools
 dnf makecache
 dnf upgrade -y
 
+yum install -y openssl-devel openssl openssl-libs
+
 yum install -y gcc cpp gcc-c++ libstdc++-devel make m4 libtool pkgconfig groff-base \
-  glibc-devel glib2-devel systemd-devel libuuid-devel openssl-devel openssl openssl-libs \
+  glibc-devel glib2-devel systemd-devel libuuid-devel \
   ncurses-devel ncurses elfutils-libelf-devel elfutils-devel libselinux-devel \
   libcom_err-devel libverto-devel keyutils-libs-devel krb5-devel libkadm5 libsepol-devel \
   redhat-rpm-config rpm-build rpmdevtools cpio wget ca-certificates curl \
