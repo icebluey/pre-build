@@ -2,6 +2,9 @@
 export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 TZ='UTC'; export TZ
 
+if ! grep -q '^alias ll=' ~/.bashrc; then echo "alias ll='/bin/ls --color -lah'" >> ~/.bashrc; . ~/.bashrc; fi
+
+dnf makecache
 dnf install -y epel-release ; dnf makecache
 dnf upgrade -y epel-release ; dnf makecache
 dnf install -y dnf-plugins-core
