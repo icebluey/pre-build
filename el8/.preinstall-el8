@@ -2,9 +2,12 @@
 export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 TZ='UTC'; export TZ
 
+dnf install -y epel-release ; dnf makecache
+dnf upgrade -y epel-release ; dnf makecache
 dnf install -y dnf-plugins-core
 dnf config-manager --set-enabled powertools
 dnf makecache
+dnf upgrade -y
 
 yum install -y gcc cpp gcc-c++ libstdc++-devel make m4 libtool pkgconfig groff-base \
   glibc-devel glib2-devel systemd-devel libuuid-devel openssl-devel openssl openssl-libs \
