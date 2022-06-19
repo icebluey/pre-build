@@ -12,7 +12,9 @@ dnf config-manager --set-enabled powertools
 dnf makecache
 dnf upgrade -y
 
-yum install -y openssl-devel openssl openssl-libs
+yum install -y openssl-libs
+yum install -y openssl
+yum install -y openssl-devel
 
 yum install -y gcc cpp gcc-c++ libstdc++-devel make m4 libtool pkgconfig groff-base \
   glibc-devel glib2-devel systemd-devel libuuid-devel \
