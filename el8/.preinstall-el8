@@ -33,7 +33,7 @@ yum install -y perl perl-devel perl-libs perl-Env perl-ExtUtils-Embed \
   perl-ExtUtils-ParseXS perl-Git perl-JSON perl-SGMLSpm perl-libwww-perl perl-podlators
 
 yum install -y glibc-devel glibc-headers libxml2-devel libxslt-devel \
-  gd-devel perl-devel perl bc net-snmp-libs net-snmp-agent-libs
+  gd-devel perl-devel perl bc net-snmp-libs net-snmp-agent-libs net-snmp-devel
 
 /sbin/ldconfig >/dev/null 2>&1
 
