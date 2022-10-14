@@ -87,7 +87,7 @@ fi
 
 _tmp_dir="$(mktemp -d)"
 cd "${_tmp_dir}"
-_p11_kit_ver="$(wget -qO- 'https://github.com/p11-glue/p11-kit/releases' | grep -i 'href="/p11-glue/p11-kit/releases/download/.*tar.*' | sed 's|"|\n|g' | grep -i '^/p11-glue/p11-kit/releases/download/' | grep -ivE 'alpha|beta|rc' | sed -e 's|.*download/||g' -e 's|/p.*||g' | sort -V | uniq | tail -n 1)"
+_p11_kit_ver="$(wget -qO- 'https://github.com/p11-glue/p11-kit/releases' | grep -i 'p11-kit.*tree' | sed 's|"|\n|g' | grep -i '^/p11-glue/p11-kit/tree' | grep -ivE 'alpha|beta|rc' | sed 's|.*/tree/||g' | sort -V | uniq | tail -n 1)"
 wget -c -t 0 -T 9 "https://github.com/p11-glue/p11-kit/releases/download/${_p11_kit_ver}/p11-kit-${_p11_kit_ver}.tar.xz"
 sleep 1
 tar -xf "p11-kit-${_p11_kit_ver}.tar.xz"
