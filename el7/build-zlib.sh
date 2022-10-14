@@ -12,6 +12,11 @@ export CXXFLAGS
 LDFLAGS='-Wl,-z,relro -Wl,--as-needed -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld'
 export LDFLAGS
 
+CC=gcc
+export CC
+CXX=g++
+export CXX
+
 _strip_and_zipman () {
     if [[ "$(pwd)" = '/' ]]; then
         echo
