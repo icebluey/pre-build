@@ -91,6 +91,7 @@ bash build-chrony-in-a-container.sh
 sleep 1
 mv -f /tmp/chrony-*.el7.x86_64.tar.xz "${_output_dir}"/
 
+sleep 5
 echo
 printf '\033[01;32m%s\033[m\n' ' all done'
 echo
