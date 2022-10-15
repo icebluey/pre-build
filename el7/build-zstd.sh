@@ -67,9 +67,13 @@ git clone "https://github.com/facebook/zstd.git"
 sleep 1
 cd zstd
 
-find ./ -iname Makefile | xargs -I "{}" sed 's@prefix.*?= /usr/local@prefix      ?= /usr@g' -i "{}"
-sed '/^libdir/s|)/lib$|)/lib64|g' -i lib/Makefile
-sed 's@LIBDIR.*?= $(exec_prefix)/lib$@LIBDIR      ?= $(exec_prefix)/lib64@'  -i lib/Makefile
+#find ./ -iname Makefile | xargs -I "{}" sed 's@prefix.*?= /usr/local@prefix      ?= /usr@g' -i "{}"
+#sed '/^libdir/s|)/lib$|)/lib64|g' -i lib/Makefile
+#sed 's@LIBDIR.*?= $(exec_prefix)/lib$@LIBDIR      ?= $(exec_prefix)/lib64@'  -i lib/Makefile
+find ./ -iname Makefile | xargs -I "{}" sed '/^PREFIX/s|= .*|= /usr|g' -i "{}"
+find ./ -iname Makefile | xargs -I "{}" sed '/^LIBDIR/s|= .*|= /usr/lib64|g' -i "{}"
+find ./ -iname Makefile | xargs -I "{}" sed '/^prefix/s|= .*|= /usr|g' -i "{}"
+find ./ -iname Makefile | xargs -I "{}" sed '/^libdir/s|= .*|= /usr/lib64|g' -i "{}"
 sleep 1
 make V=1 all prefix=/usr libdir=/usr/lib64
 sleep 1
