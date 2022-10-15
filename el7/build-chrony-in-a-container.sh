@@ -21,10 +21,7 @@ CXXFLAGS='-O2 -fexceptions -g -grecord-gcc-switches -pipe -Wall -Werror=format-s
 export CXXFLAGS
 LDFLAGS='-Wl,-z,relro -Wl,--as-needed -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld'
 export LDFLAGS
-
 _ORIG_LDFLAGS="$LDFLAGS"
-LDFLAGS="${_ORIG_LDFLAGS} -Wl,-rpath,/usr/lib64/chrony/private"
-export LDFLAGS
 
 CC=gcc
 export CC
@@ -188,6 +185,10 @@ echo
 ############################################################################
 ############################################################################
 
+LDFLAGS=''
+LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN'
+export LDFLAGS
+
 _tmp_dir="$(mktemp -d)"
 cd "${_tmp_dir}"
 _nettle_ver=$(wget -qO- 'https://ftp.gnu.org/gnu/nettle/' | grep -i 'a href="nettle.*\.tar' | sed 's/"/\n/g' | grep -i '^nettle-.*tar.gz$' | sed -e 's|nettle-||g' -e 's|\.tar.*||g' | sort -V | uniq | tail -n 1)
@@ -235,6 +236,10 @@ echo
 ############################################################################
 ############################################################################
 ############################################################################
+
+LDFLAGS=''
+LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN'
+export LDFLAGS
 
 bash /opt/gcc/set-static-libstdcxx
 
@@ -293,6 +298,10 @@ bash /opt/gcc/set-shared-libstdcxx
 ############################################################################
 ############################################################################
 ############################################################################
+
+LDFLAGS=''
+LDFLAGS="${_ORIG_LDFLAGS} -Wl,-rpath,/usr/lib64/chrony/private"
+export LDFLAGS
 
 /sbin/ldconfig
 
