@@ -185,6 +185,52 @@ echo
 ############################################################################
 ############################################################################
 
+_tmp_dir="$(mktemp -d)"
+cd "${_tmp_dir}"
+
+#https://github.com/facebook/zstd.git
+git clone "https://github.com/facebook/zstd.git"
+sleep 1
+cd zstd
+
+find ./ -iname Makefile | xargs -I "{}" sed 's@prefix.*?= /usr/local@prefix      ?= /usr@g' -i "{}"
+sed '/^libdir/s|)/lib$|)/lib64|g' -i lib/Makefile
+sed 's@LIBDIR.*?= $(exec_prefix)/lib$@LIBDIR      ?= $(exec_prefix)/lib64@'  -i lib/Makefile
+sleep 1
+make V=1 all prefix=/usr libdir=/usr/lib64
+sleep 1
+rm -fr /tmp/zstd
+sleep 1
+make install DESTDIR=/tmp/zstd
+sleep 1
+cd /tmp/zstd/
+_zstd_ver="$(cat usr/lib64/pkgconfig/libzstd.pc | grep '^Version: ' | awk '{print $NF}')"
+sed 's|http:|https:|g' -i usr/lib64/pkgconfig/libzstd.pc
+_strip_and_zipman
+sleep 1
+install -m 0755 -d usr/lib64/chrony/private
+sleep 1
+cp -a usr/lib64/*.so* usr/lib64/chrony/private/
+
+echo
+sleep 2
+tar -Jcvf /tmp/"zstd-${_zstd_ver}-1.el7.x86_64.tar.xz" *
+echo
+sleep 2
+tar -xf /tmp/"zstd-${_zstd_ver}-1.el7.x86_64.tar.xz" -C /
+
+cd /tmp
+rm -fr "${_tmp_dir}"
+rm -fr /tmp/zstd
+rm -fr /tmp/zstd*tar*
+printf '\033[01;32m%s\033[m\n' '  build zstd done'
+/sbin/ldconfig
+echo
+
+############################################################################
+############################################################################
+############################################################################
+
 LDFLAGS=''
 LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN'
 export LDFLAGS
