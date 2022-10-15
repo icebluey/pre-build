@@ -67,8 +67,12 @@ git clone "https://github.com/lz4/lz4.git"
 sleep 1
 cd lz4
 
-find ./ -iname Makefile | xargs -I "{}" sed 's@PREFIX.*?= /usr/local@PREFIX      ?= /usr@g' -i "{}"
-sed 's@LIBDIR.*?= $(exec_prefix)/lib$@LIBDIR      ?= $(exec_prefix)/lib64@'  -i lib/Makefile
+#find ./ -iname Makefile | xargs -I "{}" sed 's@PREFIX.*?= /usr/local@PREFIX      ?= /usr@g' -i "{}"
+#sed 's@LIBDIR.*?= $(exec_prefix)/lib$@LIBDIR      ?= $(exec_prefix)/lib64@'  -i lib/Makefile
+find ./ -iname Makefile | xargs -I "{}" sed '/^PREFIX/s|= .*|= /usr|g' -i "{}"
+find ./ -iname Makefile | xargs -I "{}" sed '/^LIBDIR/s|= .*|= /usr/lib64|g' -i "{}"
+find ./ -iname Makefile | xargs -I "{}" sed '/^prefix/s|= .*|= /usr|g' -i "{}"
+find ./ -iname Makefile | xargs -I "{}" sed '/^libdir/s|= .*|= /usr/lib64|g' -i "{}"
 sleep 1
 make V=1 all prefix=/usr libdir=/usr/lib64
 sleep 1
