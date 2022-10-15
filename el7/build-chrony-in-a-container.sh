@@ -237,6 +237,52 @@ export LDFLAGS
 
 _tmp_dir="$(mktemp -d)"
 cd "${_tmp_dir}"
+
+git clone --recursive 'https://github.com/google/brotli.git' brotli
+cd brotli
+rm -fr .git
+bash bootstrap
+./configure \
+--build=x86_64-linux-gnu --host=x86_64-linux-gnu \
+--enable-shared --enable-static \
+--prefix=/usr --libdir=/usr/lib64 --includedir=/usr/include --sysconfdir=/etc
+sleep 1
+make all
+rm -fr /tmp/brotli
+make install DESTDIR=/tmp/brotli
+cd /tmp/brotli
+sed 's|http://|https://|g' -i usr/lib64/pkgconfig/*.pc
+_strip_and_zipman
+sleep 1
+install -m 0755 -d usr/lib64/chrony/private
+sleep 1
+cp -a usr/lib64/*.so* usr/lib64/chrony/private/
+
+echo
+sleep 2
+tar -Jcvf /tmp/brotli-git-1.el7.x86_64.tar.xz *
+echo
+sleep 2
+tar -xf /tmp/brotli-git-1.el7.x86_64.tar.xz -C /
+
+cd /tmp
+rm -fr "${_tmp_dir}"
+rm -fr /tmp/brotli
+rm -fr /tmp/brotli*tar*
+printf '\033[01;32m%s\033[m\n' '  build brotli done'
+/sbin/ldconfig
+echo
+
+############################################################################
+############################################################################
+############################################################################
+
+LDFLAGS=''
+LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN'
+export LDFLAGS
+
+_tmp_dir="$(mktemp -d)"
+cd "${_tmp_dir}"
 _nettle_ver=$(wget -qO- 'https://ftp.gnu.org/gnu/nettle/' | grep -i 'a href="nettle.*\.tar' | sed 's/"/\n/g' | grep -i '^nettle-.*tar.gz$' | sed -e 's|nettle-||g' -e 's|\.tar.*||g' | sort -V | uniq | tail -n 1)
 wget -c -t 0 -T 9 "https://ftp.gnu.org/gnu/nettle/nettle-${_nettle_ver}.tar.gz"
 sleep 1
@@ -315,7 +361,7 @@ cd "gnutls-${_gnutls_ver}"
 --includedir=/usr/include \
 --sysconfdir=/etc
 sleep 1
-make all
+make V=1 all
 rm -fr /tmp/gnutls
 make install DESTDIR=/tmp/gnutls
 cd /tmp/gnutls
