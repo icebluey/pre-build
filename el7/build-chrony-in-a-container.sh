@@ -37,6 +37,7 @@ _strip_and_zipman () {
         exit 1
     else
         rm -fr lib64
+        rm -fr lib
         chown -R root:root ./
     fi
     find usr/ -type f -iname '*.la' -delete
@@ -50,11 +51,12 @@ _strip_and_zipman () {
         find -L usr/share/man/ -type l -exec rm -f '{}' \;
     fi
     if [[ -d usr/lib/x86_64-linux-gnu ]]; then
+        find usr/lib/x86_64-linux-gnu/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
         find usr/lib/x86_64-linux-gnu/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
         find usr/lib/x86_64-linux-gnu/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
     fi
     if [[ -d usr/lib64 ]]; then
-        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs -r -I '{}' chmod 0755 '{}'
+        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
         find usr/lib64/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
         find usr/lib64/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
     fi
@@ -63,9 +65,6 @@ _strip_and_zipman () {
     fi
     if [[ -d usr/bin ]]; then
         find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
-    fi
-    if [[ -d usr/lib/gnupg2 ]]; then
-        find usr/lib/gnupg2/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
     fi
 }
 
@@ -84,321 +83,559 @@ rm -fr /usr/lib64/chrony
 ############################################################################
 ############################################################################
 
-_tmp_dir="$(mktemp -d)"
-cd "${_tmp_dir}"
-_p11_kit_ver="$(wget -qO- 'https://github.com/p11-glue/p11-kit/releases' | grep -i 'p11-kit.*tree' | sed 's|"|\n|g' | grep -i '^/p11-glue/p11-kit/tree' | grep -ivE 'alpha|beta|rc' | sed 's|.*/tree/||g' | sort -V | uniq | tail -n 1)"
-wget -c -t 0 -T 9 "https://github.com/p11-glue/p11-kit/releases/download/${_p11_kit_ver}/p11-kit-${_p11_kit_ver}.tar.xz"
-sleep 1
-tar -xf "p11-kit-${_p11_kit_ver}.tar.xz"
-sleep 1
-rm -f "p11-kit-${_p11_kit_ver}.tar.xz"
-cd "p11-kit-${_p11_kit_ver}"
-
-./configure \
---build=x86_64-linux-gnu \
---host=x86_64-linux-gnu \
---prefix=/usr \
---exec-prefix=/usr \
---sysconfdir=/etc \
---datadir=/usr/share \
---includedir=/usr/include \
---libdir=/usr/lib64 \
---libexecdir=/usr/libexec \
---disable-static \
---disable-doc \
---with-trust-paths=/etc/pki/ca-trust/source:/usr/share/pki/ca-trust-source \
---with-hash-impl=freebl --disable-silent-rules
-sleep 1
-make all
-sleep 1
-make install DESTDIR=/tmp/p11-kit
-cd /tmp/p11-kit
-rm -fr usr/share/gtk-doc
-_strip_and_zipman
-sleep 1
-install -m 0755 -d usr/lib64/chrony/private
-sleep 1
-cp -a usr/lib64/*.so* usr/lib64/chrony/private/
-echo
-sleep 2
-tar -Jcvf /tmp/"p11-kit-${_p11_kit_ver}-1.el7.x86_64.tar.xz" *
-echo
-sleep 2
-tar -xf /tmp/"p11-kit-${_p11_kit_ver}-1.el7.x86_64.tar.xz" -C /
-cd /tmp
-rm -fr "${_tmp_dir}"
-rm -fr /tmp/p11-kit
-rm -f /tmp/p11-kit*.tar*
-printf '\033[01;32m%s\033[m\n' '  build p11-kit done'
-/sbin/ldconfig
-echo
-
-############################################################################
-############################################################################
-############################################################################
-
-_tmp_dir="$(mktemp -d)"
-cd "${_tmp_dir}"
-_libidn2_ver=$(wget -qO- 'https://ftp.gnu.org/gnu/libidn/' | grep -i 'a href="libidn2.*\.tar' | sed 's/"/\n/g' | grep -i '^libidn2-.*tar.gz$' | sed -e 's|libidn2-||g' -e 's|\.tar.*||g' | grep -ivE 'alpha|beta|rc|latest' | sort -V | uniq | tail -n 1)
-wget -c -t 0 -T 9 "https://ftp.gnu.org/gnu/libidn/libidn2-${_libidn2_ver}.tar.gz"
-sleep 1
-tar -xf "libidn2-${_libidn2_ver}.tar.gz"
-sleep 1
-rm -f "libidn2-${_libidn2_ver}.tar.gz"
-cd "libidn2-${_libidn2_ver}"
-
-./configure \
---build=x86_64-linux-gnu --host=x86_64-linux-gnu \
---prefix=/usr --exec-prefix=/usr --sysconfdir=/etc \
---datadir=/usr/share --includedir=/usr/include \
---libdir=/usr/lib64 --libexecdir=/usr/libexec \
---disable-static --disable-doc 
-sleep 1
-make all
-rm -fr /tmp/libidn2
-make install DESTDIR=/tmp/libidn2
-
-cd /tmp/libidn2
-sed 's|http://|https://|g' -i usr/lib64/pkgconfig/*.pc
-_strip_and_zipman
-sleep 1
-install -m 0755 -d usr/lib64/chrony/private
-sleep 1
-cp -a usr/lib64/*.so* usr/lib64/chrony/private/
-
-echo
-sleep 2
-tar -Jcvf /tmp/"libidn2-${_libidn2_ver}-1.el7.x86_64.tar.xz" *
-echo
-sleep 2
-tar -xf /tmp/"libidn2-${_libidn2_ver}-1.el7.x86_64.tar.xz" -C /
-
-cd /tmp
-rm -fr "${_tmp_dir}"
-rm -fr /tmp/libidn2
-rm -f /tmp/libidn2*.tar*
-printf '\033[01;32m%s\033[m\n' '  build libidn2 done'
-/sbin/ldconfig
-echo
+_build_zlib() {
+    /sbin/ldconfig
+    set -e
+    _tmp_dir="$(mktemp -d)"
+    cd "${_tmp_dir}"
+    _zlib_ver="$(wget -qO- 'https://www.zlib.net/' | grep 'zlib-[1-9].*\.tar\.' | sed -e 's|"|\n|g' | grep '^zlib-[1-9]' | sed -e 's|\.tar.*||g' -e 's|zlib-||g' | sort -V | uniq | tail -n 1)"
+    wget -c -t 9 -T 9 "https://www.zlib.net/zlib-${_zlib_ver}.tar.gz"
+    tar -xof zlib-*.tar.*
+    sleep 1
+    rm -f zlib-*.tar*
+    cd zlib-*
+    ./configure --prefix=/usr --libdir=/usr/lib64 --includedir=/usr/include --sysconfdir=/etc --64
+    make all
+    rm -fr /tmp/zlib
+    make DESTDIR=/tmp/zlib install
+    cd /tmp/zlib
+    if [[ "$(pwd)" = '/' ]]; then
+        echo
+        printf '\e[01;31m%s\e[m\n' "Current dir is '/'"
+        printf '\e[01;31m%s\e[m\n' "quit"
+        echo
+        exit 1
+    else
+        rm -fr lib64
+        rm -fr lib
+        chown -R root:root ./
+    fi
+    find usr/ -type f -iname '*.la' -delete
+    if [[ -d usr/share/man ]]; then
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+        sleep 2
+        find usr/share/man/ -type f -iname '*.[1-9]' -exec gzip -f -9 '{}' \;
+        sleep 2
+        find -L usr/share/man/ -type l | while read file; do ln -svf "$(readlink -s "${file}").gz" "${file}.gz" ; done
+        sleep 2
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+    fi
+    if [[ -d usr/lib/x86_64-linux-gnu ]]; then
+        find usr/lib/x86_64-linux-gnu/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/lib64 ]]; then
+        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib64/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib64/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/sbin ]]; then
+        find usr/sbin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/bin ]]; then
+        find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    echo
+    install -m 0755 -d usr/lib64/chrony/private
+    cp -af usr/lib64/*.so* usr/lib64/chrony/private/
+    /bin/rm -f /usr/lib64/libz.so*
+    /bin/rm -f /usr/lib64/libz.a
+    sleep 2
+    /bin/cp -afr * /
+    sleep 2
+    cd /tmp
+    rm -fr "${_tmp_dir}"
+    rm -fr /tmp/zlib
+    /sbin/ldconfig
+}
+_build_zlib
 
 ############################################################################
 ############################################################################
 ############################################################################
 
-_tmp_dir="$(mktemp -d)"
-cd "${_tmp_dir}"
-
-#https://github.com/facebook/zstd.git
-git clone "https://github.com/facebook/zstd.git"
-sleep 1
-cd zstd
-
-#find ./ -iname Makefile | xargs -I "{}" sed 's@prefix.*?= /usr/local@prefix      ?= /usr@g' -i "{}"
-#sed '/^libdir/s|)/lib$|)/lib64|g' -i lib/Makefile
-#sed 's@LIBDIR.*?= $(exec_prefix)/lib$@LIBDIR      ?= $(exec_prefix)/lib64@'  -i lib/Makefile
-
-sed '/^PREFIX/s|= .*|= /usr|g' -i Makefile
-sed '/^LIBDIR/s|= .*|= /usr/lib64|g' -i Makefile
-sed '/^prefix/s|= .*|= /usr|g' -i Makefile
-sed '/^libdir/s|= .*|= /usr/lib64|g' -i Makefile
-sed '/^PREFIX/s|= .*|= /usr|g' -i lib/Makefile
-sed '/^LIBDIR/s|= .*|= /usr/lib64|g' -i lib/Makefile
-sed '/^prefix/s|= .*|= /usr|g' -i lib/Makefile
-sed '/^libdir/s|= .*|= /usr/lib64|g' -i lib/Makefile
-sed '/^PREFIX/s|= .*|= /usr|g' -i programs/Makefile
-sed '/^LIBDIR/s|= .*|= /usr/lib64|g' -i programs/Makefile
-sed '/^prefix/s|= .*|= /usr|g' -i programs/Makefile
-sed '/^libdir/s|= .*|= /usr/lib64|g' -i programs/Makefile
-
-sleep 1
-make V=1 all prefix=/usr libdir=/usr/lib64
-sleep 1
-rm -fr /tmp/zstd
-sleep 1
-make install DESTDIR=/tmp/zstd
-sleep 1
-cd /tmp/zstd/
-_zstd_ver="$(cat usr/lib64/pkgconfig/libzstd.pc | grep '^Version: ' | awk '{print $NF}')"
-sed 's|http:|https:|g' -i usr/lib64/pkgconfig/libzstd.pc
-_strip_and_zipman
-sleep 1
-install -m 0755 -d usr/lib64/chrony/private
-sleep 1
-cp -a usr/lib64/*.so* usr/lib64/chrony/private/
-
-echo
-sleep 2
-tar -Jcvf /tmp/"zstd-${_zstd_ver}-1.el7.x86_64.tar.xz" *
-echo
-sleep 2
-tar -xf /tmp/"zstd-${_zstd_ver}-1.el7.x86_64.tar.xz" -C /
-
-cd /tmp
-rm -fr "${_tmp_dir}"
-rm -fr /tmp/zstd
-rm -fr /tmp/zstd*tar*
-printf '\033[01;32m%s\033[m\n' '  build zstd done'
-/sbin/ldconfig
-echo
-
-############################################################################
-############################################################################
-############################################################################
-
-LDFLAGS=''
-LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN'
-export LDFLAGS
-
-_tmp_dir="$(mktemp -d)"
-cd "${_tmp_dir}"
-
-git clone --recursive 'https://github.com/google/brotli.git' brotli
-cd brotli
-rm -fr .git
-bash bootstrap
-./configure \
---build=x86_64-linux-gnu --host=x86_64-linux-gnu \
---enable-shared --enable-static \
---prefix=/usr --libdir=/usr/lib64 --includedir=/usr/include --sysconfdir=/etc
-sleep 1
-make all
-rm -fr /tmp/brotli
-make install DESTDIR=/tmp/brotli
-cd /tmp/brotli
-sed 's|http://|https://|g' -i usr/lib64/pkgconfig/*.pc
-_strip_and_zipman
-sleep 1
-install -m 0755 -d usr/lib64/chrony/private
-sleep 1
-cp -a usr/lib64/*.so* usr/lib64/chrony/private/
-
-echo
-sleep 2
-tar -Jcvf /tmp/brotli-git-1.el7.x86_64.tar.xz *
-echo
-sleep 2
-tar -xf /tmp/brotli-git-1.el7.x86_64.tar.xz -C /
-
-cd /tmp
-rm -fr "${_tmp_dir}"
-rm -fr /tmp/brotli
-rm -fr /tmp/brotli*tar*
-printf '\033[01;32m%s\033[m\n' '  build brotli done'
-/sbin/ldconfig
-echo
+_build_libssh2() {
+    /sbin/ldconfig
+    set -e
+    _tmp_dir="$(mktemp -d)"
+    cd "${_tmp_dir}"
+    _libssh2_ver="$(wget -qO- 'https://www.libssh2.org/' | grep -i 'href="download/libssh2-[1-9]' | sed 's|"|\n|g' | grep -i '^download/libssh2-[1-9]' | sed -e 's|.*libssh2-||g' -e 's|\.tar.*||g' | grep -ivE 'alpha|beta|rc[0-9]' | sort -V | tail -n 1)"
+    wget -c -t 9 -T 9 "https://www.libssh2.org/download/libssh2-${_libssh2_ver}.tar.gz"
+    tar -xof libssh2-*.tar*
+    sleep 1
+    rm -f libssh2-*.tar*
+    cd libssh2-*
+    LDFLAGS='' ; LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN' ; export LDFLAGS
+    ./configure \
+    --build=x86_64-linux-gnu --host=x86_64-linux-gnu \
+    --enable-shared --enable-static \
+    --disable-silent-rules --with-libz --enable-debug --with-crypto=openssl \
+    --prefix=/usr --libdir=/usr/lib64 --includedir=/usr/include --sysconfdir=/etc
+    make all
+    rm -fr /tmp/libssh2
+    make install DESTDIR=/tmp/libssh2
+    cd /tmp/libssh2
+    if [[ "$(pwd)" = '/' ]]; then
+        echo
+        printf '\e[01;31m%s\e[m\n' "Current dir is '/'"
+        printf '\e[01;31m%s\e[m\n' "quit"
+        echo
+        exit 1
+    else
+        rm -fr lib64
+        rm -fr lib
+        chown -R root:root ./
+    fi
+    find usr/ -type f -iname '*.la' -delete
+    if [[ -d usr/share/man ]]; then
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+        sleep 2
+        find usr/share/man/ -type f -iname '*.[1-9]' -exec gzip -f -9 '{}' \;
+        sleep 2
+        find -L usr/share/man/ -type l | while read file; do ln -svf "$(readlink -s "${file}").gz" "${file}.gz" ; done
+        sleep 2
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+    fi
+    if [[ -d usr/lib/x86_64-linux-gnu ]]; then
+        find usr/lib/x86_64-linux-gnu/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/lib64 ]]; then
+        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib64/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib64/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/sbin ]]; then
+        find usr/sbin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/bin ]]; then
+        find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    echo
+    install -m 0755 -d usr/lib64/chrony/private
+    cp -af usr/lib64/*.so* usr/lib64/chrony/private/
+    sleep 2
+    /bin/cp -afr * /
+    sleep 2
+    cd /tmp
+    rm -fr "${_tmp_dir}"
+    rm -fr /tmp/libssh2
+    /sbin/ldconfig
+}
+_build_libssh2
 
 ############################################################################
 ############################################################################
 ############################################################################
 
-LDFLAGS=''
-LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN'
-export LDFLAGS
+_build_brotli() {
+    /sbin/ldconfig
+    set -e
+    _tmp_dir="$(mktemp -d)"
+    cd "${_tmp_dir}"
+    #git clone --recursive 'https://github.com/google/brotli.git' brotli
+    mv -f /tmp/brotli-git.tar.gz ./
+    tar -xof brotli-git.tar.gz
+    sleep 1
+    rm -f brotli-*.tar*
 
-_tmp_dir="$(mktemp -d)"
-cd "${_tmp_dir}"
-_nettle_ver=$(wget -qO- 'https://ftp.gnu.org/gnu/nettle/' | grep -i 'a href="nettle.*\.tar' | sed 's/"/\n/g' | grep -i '^nettle-.*tar.gz$' | sed -e 's|nettle-||g' -e 's|\.tar.*||g' | sort -V | uniq | tail -n 1)
-wget -c -t 0 -T 9 "https://ftp.gnu.org/gnu/nettle/nettle-${_nettle_ver}.tar.gz"
-sleep 1
-tar -xf "nettle-${_nettle_ver}.tar.gz"
-sleep 1
-rm -f "nettle-${_nettle_ver}.tar.gz"
-cd "nettle-${_nettle_ver}"
-
-./configure \
---build=x86_64-linux-gnu --host=x86_64-linux-gnu \
---prefix=/usr --libdir=/usr/lib64 \
---includedir=/usr/include --sysconfdir=/etc \
---enable-shared --enable-static --enable-fat \
---disable-openssl
-sleep 1
-make all
-rm -fr /tmp/nettle
-make install DESTDIR=/tmp/nettle
-
-cd /tmp/nettle
-sed 's|http://|https://|g' -i usr/lib64/pkgconfig/*.pc
-_strip_and_zipman
-sleep 1
-install -m 0755 -d usr/lib64/chrony/private
-sleep 1
-cp -a usr/lib64/*.so* usr/lib64/chrony/private/
-
-echo
-sleep 2
-tar -Jcvf /tmp/"nettle-${_nettle_ver}-1.el7.x86_64.tar.xz" *
-echo
-sleep 2
-tar -xf /tmp/"nettle-${_nettle_ver}-1.el7.x86_64.tar.xz" -C /
-
-cd /tmp
-rm -fr "${_tmp_dir}"
-rm -fr /tmp/nettle
-rm -f /tmp/nettle*.tar*
-printf '\033[01;32m%s\033[m\n' '  build nettle done'
-/sbin/ldconfig
-echo
+    cd brotli
+    rm -fr .git
+    ./bootstrap
+    rm -fr autom4te.cache
+    LDFLAGS='' ; LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN' ; export LDFLAGS
+    ./configure \
+    --build=x86_64-linux-gnu --host=x86_64-linux-gnu \
+    --enable-shared --enable-static \
+    --prefix=/usr --libdir=/usr/lib64 --includedir=/usr/include --sysconfdir=/etc
+    make all
+    rm -fr /tmp/brotli
+    make install DESTDIR=/tmp/brotli
+    cd /tmp/brotli
+    if [[ "$(pwd)" = '/' ]]; then
+        echo
+        printf '\e[01;31m%s\e[m\n' "Current dir is '/'"
+        printf '\e[01;31m%s\e[m\n' "quit"
+        echo
+        exit 1
+    else
+        rm -fr lib64
+        rm -fr lib
+        chown -R root:root ./
+    fi
+    find usr/ -type f -iname '*.la' -delete
+    if [[ -d usr/share/man ]]; then
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+        sleep 2
+        find usr/share/man/ -type f -iname '*.[1-9]' -exec gzip -f -9 '{}' \;
+        sleep 2
+        find -L usr/share/man/ -type l | while read file; do ln -svf "$(readlink -s "${file}").gz" "${file}.gz" ; done
+        sleep 2
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+    fi
+    if [[ -d usr/lib/x86_64-linux-gnu ]]; then
+        find usr/lib/x86_64-linux-gnu/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/lib64 ]]; then
+        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib64/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib64/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/sbin ]]; then
+        find usr/sbin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/bin ]]; then
+        find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    echo
+    install -m 0755 -d usr/lib64/chrony/private
+    cp -af usr/lib64/*.so* usr/lib64/chrony/private/
+    sleep 2
+    /bin/cp -afr * /
+    sleep 2
+    cd /tmp
+    rm -fr "${_tmp_dir}"
+    rm -fr /tmp/brotli
+    /sbin/ldconfig
+}
+_build_brotli
 
 ############################################################################
 ############################################################################
 ############################################################################
 
-LDFLAGS=''
-LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN'
-export LDFLAGS
+_build_zstd() {
+    /sbin/ldconfig
+    set -e
+    _tmp_dir="$(mktemp -d)"
+    cd "${_tmp_dir}"
+    #git clone --recursive "https://github.com/facebook/zstd.git"
+    mv -f /tmp/zstd-git.tar.gz ./
+    tar -xof zstd-git.tar.gz
+    sleep 1
+    rm -f zstd-*.tar*
+    cd zstd
+    rm -fr .git
+    sed '/^PREFIX/s|= .*|= /usr|g' -i Makefile
+    sed '/^LIBDIR/s|= .*|= /usr/lib64|g' -i Makefile
+    sed '/^prefix/s|= .*|= /usr|g' -i Makefile
+    sed '/^libdir/s|= .*|= /usr/lib64|g' -i Makefile
+    sed '/^PREFIX/s|= .*|= /usr|g' -i lib/Makefile
+    sed '/^LIBDIR/s|= .*|= /usr/lib64|g' -i lib/Makefile
+    sed '/^prefix/s|= .*|= /usr|g' -i lib/Makefile
+    sed '/^libdir/s|= .*|= /usr/lib64|g' -i lib/Makefile
+    sed '/^PREFIX/s|= .*|= /usr|g' -i programs/Makefile
+    sed '/^LIBDIR/s|= .*|= /usr/lib64|g' -i programs/Makefile
+    sed '/^prefix/s|= .*|= /usr|g' -i programs/Makefile
+    sed '/^libdir/s|= .*|= /usr/lib64|g' -i programs/Makefile
+    LDFLAGS='' ; LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$OOORIGIN' ; export LDFLAGS
+    make V=1 all prefix=/usr libdir=/usr/lib64
+    rm -fr /tmp/zstd
+    make install DESTDIR=/tmp/zstd
+    cd /tmp/zstd
+    if [[ "$(pwd)" = '/' ]]; then
+        echo
+        printf '\e[01;31m%s\e[m\n' "Current dir is '/'"
+        printf '\e[01;31m%s\e[m\n' "quit"
+        echo
+        exit 1
+    else
+        rm -fr lib64
+        rm -fr lib
+        chown -R root:root ./
+    fi
+    find usr/ -type f -iname '*.la' -delete
+    if [[ -d usr/share/man ]]; then
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+        sleep 2
+        find usr/share/man/ -type f -iname '*.[1-9]' -exec gzip -f -9 '{}' \;
+        sleep 2
+        find -L usr/share/man/ -type l | while read file; do ln -svf "$(readlink -s "${file}").gz" "${file}.gz" ; done
+        sleep 2
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+    fi
+    if [[ -d usr/lib/x86_64-linux-gnu ]]; then
+        find usr/lib/x86_64-linux-gnu/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/lib64 ]]; then
+        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib64/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib64/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/sbin ]]; then
+        find usr/sbin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/bin ]]; then
+        find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    echo
+    find usr/lib64/ -type f -iname '*.so*' | xargs -I '{}' chrpath -r '$ORIGIN' '{}'
+    install -m 0755 -d usr/lib64/chrony/private
+    cp -af usr/lib64/*.so* usr/lib64/chrony/private/
+    sleep 2
+    /bin/cp -afr * /
+    sleep 2
+    cd /tmp
+    rm -fr "${_tmp_dir}"
+    rm -fr /tmp/zstd
+    /sbin/ldconfig
+}
+_build_zstd
 
+############################################################################
+############################################################################
+############################################################################
+
+_build_p11kit() {
+    /sbin/ldconfig
+    set -e
+    _tmp_dir="$(mktemp -d)"
+    cd "${_tmp_dir}"
+    _p11_kit_ver="$(wget -qO- 'https://github.com/p11-glue/p11-kit/releases' | grep -i 'p11-kit.*tree' | sed 's|"|\n|g' | grep -i '^/p11-glue/p11-kit/tree' | grep -ivE 'alpha|beta|rc' | sed 's|.*/tree/||g' | sort -V | uniq | tail -n 1)"
+    wget -c -t 0 -T 9 "https://github.com/p11-glue/p11-kit/releases/download/${_p11_kit_ver}/p11-kit-${_p11_kit_ver}.tar.xz"
+    tar -xof p11-kit-*.tar*
+    sleep 1
+    rm -f p11-kit-*.tar*
+    cd p11-kit-*
+    LDFLAGS='' ; LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN' ; export LDFLAGS
+    ./configure \
+    --build=x86_64-linux-gnu \
+    --host=x86_64-linux-gnu \
+    --prefix=/usr \
+    --exec-prefix=/usr \
+    --sysconfdir=/etc \
+    --datadir=/usr/share \
+    --includedir=/usr/include \
+    --libdir=/usr/lib64 \
+    --libexecdir=/usr/libexec \
+    --disable-static \
+    --disable-doc \
+    --with-trust-paths=/etc/pki/ca-trust/source:/usr/share/pki/ca-trust-source \
+    --with-hash-impl=freebl --disable-silent-rules
+    make all
+    rm -fr /tmp/p11kit
+    make install DESTDIR=/tmp/p11kit
+    cd /tmp/p11kit
+    rm -fr usr/share/gtk-doc
+    if [[ "$(pwd)" = '/' ]]; then
+        echo
+        printf '\e[01;31m%s\e[m\n' "Current dir is '/'"
+        printf '\e[01;31m%s\e[m\n' "quit"
+        echo
+        exit 1
+    else
+        rm -fr lib64
+        rm -fr lib
+        chown -R root:root ./
+    fi
+    find usr/ -type f -iname '*.la' -delete
+    if [[ -d usr/share/man ]]; then
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+        sleep 2
+        find usr/share/man/ -type f -iname '*.[1-9]' -exec gzip -f -9 '{}' \;
+        sleep 2
+        find -L usr/share/man/ -type l | while read file; do ln -svf "$(readlink -s "${file}").gz" "${file}.gz" ; done
+        sleep 2
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+    fi
+    if [[ -d usr/lib/x86_64-linux-gnu ]]; then
+        find usr/lib/x86_64-linux-gnu/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/lib64 ]]; then
+        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib64/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib64/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/sbin ]]; then
+        find usr/sbin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/bin ]]; then
+        find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    echo
+    install -m 0755 -d usr/lib64/chrony/private
+    cp -af usr/lib64/*.so* usr/lib64/chrony/private/
+    sleep 2
+    /bin/cp -afr * /
+    sleep 2
+    cd /tmp
+    rm -fr "${_tmp_dir}"
+    rm -fr /tmp/p11kit
+    /sbin/ldconfig
+}
+_build_p11kit
+
+############################################################################
+############################################################################
+############################################################################
+
+_build_nettle() {
+    /sbin/ldconfig
+    set -e
+    _tmp_dir="$(mktemp -d)"
+    cd "${_tmp_dir}"
+    _nettle_ver="$(wget -qO- 'https://ftp.gnu.org/gnu/nettle/' | grep -i 'a href="nettle.*\.tar' | sed 's/"/\n/g' | grep -i '^nettle-.*tar.gz$' | sed -e 's|nettle-||g' -e 's|\.tar.*||g' | sort -V | uniq | tail -n 1)"
+    wget -c -t 0 -T 9 "https://ftp.gnu.org/gnu/nettle/nettle-${_nettle_ver}.tar.gz"
+    tar -xof nettle-*.tar*
+    sleep 1
+    rm -f nettle-*.tar*
+    cd nettle-*
+    LDFLAGS='' ; LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN' ; export LDFLAGS
+    ./configure \
+    --build=x86_64-linux-gnu --host=x86_64-linux-gnu \
+    --prefix=/usr --libdir=/usr/lib64 \
+    --includedir=/usr/include --sysconfdir=/etc \
+    --enable-shared --enable-static --enable-fat \
+    --disable-openssl
+    make all
+    rm -fr /tmp/nettle
+    make install DESTDIR=/tmp/nettle
+    cd /tmp/nettle
+    sed 's|http://|https://|g' -i usr/lib64/pkgconfig/*.pc
+    if [[ "$(pwd)" = '/' ]]; then
+        echo
+        printf '\e[01;31m%s\e[m\n' "Current dir is '/'"
+        printf '\e[01;31m%s\e[m\n' "quit"
+        echo
+        exit 1
+    else
+        rm -fr lib64
+        rm -fr lib
+        chown -R root:root ./
+    fi
+    find usr/ -type f -iname '*.la' -delete
+    if [[ -d usr/share/man ]]; then
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+        sleep 2
+        find usr/share/man/ -type f -iname '*.[1-9]' -exec gzip -f -9 '{}' \;
+        sleep 2
+        find -L usr/share/man/ -type l | while read file; do ln -svf "$(readlink -s "${file}").gz" "${file}.gz" ; done
+        sleep 2
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+    fi
+    if [[ -d usr/lib/x86_64-linux-gnu ]]; then
+        find usr/lib/x86_64-linux-gnu/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/lib64 ]]; then
+        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib64/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib64/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/sbin ]]; then
+        find usr/sbin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/bin ]]; then
+        find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    echo
+    install -m 0755 -d usr/lib64/chrony/private
+    cp -af usr/lib64/*.so* usr/lib64/chrony/private/
+    sleep 2
+    /bin/cp -afr * /
+    sleep 2
+    cd /tmp
+    rm -fr "${_tmp_dir}"
+    rm -fr /tmp/nettle
+    /sbin/ldconfig
+}
+_build_nettle
+
+############################################################################
+############################################################################
+############################################################################
+
+_build_gnutls() {
+    /sbin/ldconfig
+    set -e
+    _tmp_dir="$(mktemp -d)"
+    cd "${_tmp_dir}"
+    _gnutls_ver="$(wget -qO- 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.7/' | grep -i 'a href="gnutls.*\.tar' | sed 's/"/\n/g' | grep -i '^gnutls-.*tar.xz$' | sed -e 's|gnutls-||g' -e 's|\.tar.*||g' | sort -V | uniq | tail -n 1)"
+    wget -c -t 0 -T 9 "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.7/gnutls-${_gnutls_ver}.tar.xz"
+    tar -xof gnutls-*.tar*
+    sleep 1
+    rm -f gnutls-*.tar*
+    cd gnutls-*
+    LDFLAGS='' ; LDFLAGS="${_ORIG_LDFLAGS}"' -Wl,-rpath,\$$ORIGIN' ; export LDFLAGS
+    ./configure \
+    --build=x86_64-linux-gnu \
+    --host=x86_64-linux-gnu \
+    --enable-shared \
+    --enable-threads=posix \
+    --enable-sha1-support \
+    --enable-ssl3-support \
+    --enable-fips140-mode \
+    --disable-openssl-compatibility \
+    --with-included-unistring \
+    --with-included-libtasn1 \
+    --prefix=/usr \
+    --libdir=/usr/lib64 \
+    --includedir=/usr/include \
+    --sysconfdir=/etc
+    make all
+    rm -fr /tmp/gnutls
+    make install DESTDIR=/tmp/gnutls
+    cd /tmp/gnutls
+    sed 's|http://|https://|g' -i usr/lib64/pkgconfig/*.pc
+    if [[ "$(pwd)" = '/' ]]; then
+        echo
+        printf '\e[01;31m%s\e[m\n' "Current dir is '/'"
+        printf '\e[01;31m%s\e[m\n' "quit"
+        echo
+        exit 1
+    else
+        rm -fr lib64
+        rm -fr lib
+        chown -R root:root ./
+    fi
+    find usr/ -type f -iname '*.la' -delete
+    if [[ -d usr/share/man ]]; then
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+        sleep 2
+        find usr/share/man/ -type f -iname '*.[1-9]' -exec gzip -f -9 '{}' \;
+        sleep 2
+        find -L usr/share/man/ -type l | while read file; do ln -svf "$(readlink -s "${file}").gz" "${file}.gz" ; done
+        sleep 2
+        find -L usr/share/man/ -type l -exec rm -f '{}' \;
+    fi
+    if [[ -d usr/lib/x86_64-linux-gnu ]]; then
+        find usr/lib/x86_64-linux-gnu/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib/x86_64-linux-gnu/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/lib64 ]]; then
+        find usr/lib64/ -type f \( -iname '*.so' -or -iname '*.so.*' \) | xargs --no-run-if-empty -I '{}' chmod 0755 '{}'
+        find usr/lib64/ -iname 'lib*.so*' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+        find usr/lib64/ -iname '*.so' -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/sbin ]]; then
+        find usr/sbin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    if [[ -d usr/bin ]]; then
+        find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
+    fi
+    echo
+    install -m 0755 -d usr/lib64/chrony/private
+    cp -af usr/lib64/*.so* usr/lib64/chrony/private/
+    sleep 2
+    /bin/cp -afr * /
+    sleep 2
+    cd /tmp
+    rm -fr "${_tmp_dir}"
+    rm -fr /tmp/gnutls
+    /sbin/ldconfig
+}
 bash /opt/gcc/set-static-libstdcxx
-
-_tmp_dir="$(mktemp -d)"
-cd "${_tmp_dir}"
-_gnutls_ver="$(wget -qO- 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.7/' | grep -i 'a href="gnutls.*\.tar' | sed 's/"/\n/g' | grep -i '^gnutls-.*tar.xz$' | sed -e 's|gnutls-||g' -e 's|\.tar.*||g' | sort -V | uniq | tail -n 1)"
-wget -c -t 0 -T 9 "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.7/gnutls-${_gnutls_ver}.tar.xz"
-sleep 1
-tar -xf "gnutls-${_gnutls_ver}.tar.xz"
-sleep 1
-rm -f "gnutls-${_gnutls_ver}.tar.xz"
-cd "gnutls-${_gnutls_ver}"
-
-./configure \
---build=x86_64-linux-gnu \
---host=x86_64-linux-gnu \
---enable-shared \
---enable-threads=posix \
---enable-sha1-support \
---enable-ssl3-support \
---enable-fips140-mode \
---disable-openssl-compatibility \
---with-included-unistring \
---with-included-libtasn1 \
---prefix=/usr \
---libdir=/usr/lib64 \
---includedir=/usr/include \
---sysconfdir=/etc
-sleep 1
-make V=1 all
-rm -fr /tmp/gnutls
-make install DESTDIR=/tmp/gnutls
-cd /tmp/gnutls
-sed 's|http://|https://|g' -i usr/lib64/pkgconfig/*.pc
-_strip_and_zipman
-sleep 1
-install -m 0755 -d usr/lib64/chrony/private
-sleep 1
-cp -a usr/lib64/*.so* usr/lib64/chrony/private/
-echo
-sleep 2
-tar -Jcvf /tmp/"gnutls-${_gnutls_ver}-1.el7.x86_64.tar.xz" *
-echo
-sleep 2
-tar -xf /tmp/"gnutls-${_gnutls_ver}-1.el7.x86_64.tar.xz" -C /
-cd /tmp
-rm -fr "${_tmp_dir}"
-rm -fr /tmp/gnutls
-rm -f /tmp/gnutls*.tar*
-printf '\033[01;32m%s\033[m\n' '  build gnutls done'
-/sbin/ldconfig
-echo
-
+_build_gnutls
 bash /opt/gcc/set-shared-libstdcxx
 
 ############################################################################
@@ -418,7 +655,7 @@ cd "${_tmp_dir}"
 _chrony_ver="$(wget -qO- 'https://chrony.tuxfamily.org/download.html' | grep 'chrony-[1-9].*\.tar' | sed 's|"|\n|g' | sed 's|chrony|\nchrony|g' | grep '^chrony-[1-9]' | sed -e 's|\.tar.*||g' -e 's|chrony-||g' | sort -V | uniq | tail -n 1)"
 wget -c -t 9 -T 9 "https://download.tuxfamily.org/chrony/chrony-${_chrony_ver}.tar.gz"
 sleep 1
-tar -xf chrony-${_chrony_ver}.tar.*
+tar -xof chrony-*.tar.*
 sleep 1
 rm -f chrony-*.tar*
 cd chrony-*
@@ -456,11 +693,12 @@ install -v -c -m 0644 chronyd.service /tmp/chrony/etc/chrony/chronyd.service
 
 cd /tmp/chrony/
 rm -fr var/run
+rm -fr run
 install -m 0755 -d usr/lib64/chrony
 install -m 0755 -d usr/lib/NetworkManager/dispatcher.d
 install -m 0755 -d usr/lib/systemd/ntp-units.d
 _strip_and_zipman
-cp -a /usr/lib64/chrony/private usr/lib64/chrony/
+cp -afr /usr/lib64/chrony/private usr/lib64/chrony/
 
 _systemd_env_list=''
 _systemd_env_list=(
