@@ -735,13 +735,13 @@ sed 's/^pool /#pool /g' -i etc/chrony/chrony.conf
 sed 's/^server/#server/g' -i etc/chrony/chrony.conf
 sed 's/^allow /#allow /g' -i etc/chrony/chrony.conf
 sed '5i# Use public NTS servers' -i etc/chrony/chrony.conf
-sed '6iserver time.cloudflare.com iburst minpoll 2 maxpoll 3 nts' -i etc/chrony/chrony.conf
-sed '7iserver nts.sth1.ntp.se iburst minpoll 2 maxpoll 3 nts' -i etc/chrony/chrony.conf
-sed '8iserver nts.sth2.ntp.se iburst minpoll 2 maxpoll 3 nts' -i etc/chrony/chrony.conf
-sed '9i#server time1.google.com iburst minpoll 2 maxpoll 3' -i etc/chrony/chrony.conf
-sed '10i#server time2.google.com iburst minpoll 2 maxpoll 3' -i etc/chrony/chrony.conf
-sed '11i#server time3.google.com iburst minpoll 2 maxpoll 3' -i etc/chrony/chrony.conf
-sed '12i#server time4.google.com iburst minpoll 2 maxpoll 3\n' -i etc/chrony/chrony.conf
+sed '6iserver time.cloudflare.com iburst minpoll 4 maxpoll 5 nts' -i etc/chrony/chrony.conf
+sed '7iserver nts.sth1.ntp.se iburst minpoll 4 maxpoll 5 nts' -i etc/chrony/chrony.conf
+sed '8iserver nts.sth2.ntp.se iburst minpoll 4 maxpoll 5 nts' -i etc/chrony/chrony.conf
+sed '9i#server time1.google.com iburst minpoll 4 maxpoll 5' -i etc/chrony/chrony.conf
+sed '10i#server time2.google.com iburst minpoll 4 maxpoll 5' -i etc/chrony/chrony.conf
+sed '11i#server time3.google.com iburst minpoll 4 maxpoll 5' -i etc/chrony/chrony.conf
+sed '12i#server time4.google.com iburst minpoll 4 maxpoll 5\n' -i etc/chrony/chrony.conf
 
 sed '/^After=/aAfter=dnscrypt-proxy.service network-online.target' -i etc/chrony/chronyd.service
 #sed '/^ExecStart=/iExecStartPre=/usr/libexec/chrony/resolve-ntp-servers.sh' -i etc/chrony/chronyd.service
