@@ -235,12 +235,7 @@ _build_brotli() {
     set -e
     _tmp_dir="$(mktemp -d)"
     cd "${_tmp_dir}"
-    #git clone --recursive 'https://github.com/google/brotli.git' brotli
-    mv -f /tmp/brotli-git.tar.gz ./
-    tar -xof brotli-git.tar.gz
-    sleep 1
-    rm -f brotli-*.tar*
-
+    git clone --recursive 'https://github.com/google/brotli.git' brotli
     cd brotli
     rm -fr .git
     ./bootstrap
@@ -313,11 +308,7 @@ _build_zstd() {
     set -e
     _tmp_dir="$(mktemp -d)"
     cd "${_tmp_dir}"
-    #git clone --recursive "https://github.com/facebook/zstd.git"
-    mv -f /tmp/zstd-git.tar.gz ./
-    tar -xof zstd-git.tar.gz
-    sleep 1
-    rm -f zstd-*.tar*
+    git clone --recursive "https://github.com/facebook/zstd.git"
     cd zstd
     rm -fr .git
     sed '/^PREFIX/s|= .*|= /usr|g' -i Makefile
