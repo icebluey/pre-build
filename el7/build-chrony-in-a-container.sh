@@ -642,8 +642,8 @@ export LDFLAGS
 _tmp_dir="$(mktemp -d)"
 cd "${_tmp_dir}"
 
-#https://download.tuxfamily.org/chrony/chrony-4.2.tar.gz
-_chrony_ver="$(wget -qO- 'https://chrony.tuxfamily.org/download.html' | grep 'chrony-[1-9].*\.tar' | sed 's|"|\n|g' | sed 's|chrony|\nchrony|g' | grep '^chrony-[1-9]' | sed -e 's|\.tar.*||g' -e 's|chrony-||g' | sort -V | uniq | tail -n 1)"
+#https://download.tuxfamily.org/chrony/chrony-4.3.tar.gz
+_chrony_ver="$(wget -qO- 'https://chrony.tuxfamily.org/download.html' | grep 'chrony-[1-9].*\.tar' | sed 's|"|\n|g' | sed 's|chrony|\nchrony|g' | grep '^chrony-[1-9]' | sed -e 's|\.tar.*||g' -e 's|chrony-||g' | grep -ivE 'alpha|beta|rc[0-9]|pre' | sort -V | tail -n 1)"
 wget -c -t 9 -T 9 "https://download.tuxfamily.org/chrony/chrony-${_chrony_ver}.tar.gz"
 sleep 1
 tar -xof chrony-*.tar.*
