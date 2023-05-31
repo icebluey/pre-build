@@ -63,10 +63,10 @@ _tmp_dir="$(mktemp -d)"
 cd "${_tmp_dir}"
 
 #https://www.libssh2.org/download/libssh2-1.10.0.tar.gz
-_libssh2_ver="$(wget -qO- 'https://www.libssh2.org/' | grep 'libssh2-[1-9].*\.tar' | sed 's|"|\n|g' | sed 's|libssh2|\nlibssh2|g' | grep '^libssh2-[1-9]' | sed -e 's|\.tar.*||g' -e 's|libssh2-||g' | sort -V | uniq | tail -n 1)"
+_libssh2_ver="$(wget -qO- 'https://www.libssh2.org/' | grep 'libssh2-[1-9].*\.tar\.' | sed 's|"|\n|g' | grep -i '^download/libssh2-[1-9]' | sed -e 's|.*libssh2-||g' -e 's|\.tar.*||g' | grep -ivE 'alpha|beta|rc[0-9]' | sort -V | tail -n 1)"
 wget -c -t 9 -T 9 "https://www.libssh2.org/download/libssh2-${_libssh2_ver}.tar.gz"
 sleep 1
-tar -xf libssh2-${_libssh2_ver}.tar.*
+tar -xof libssh2-${_libssh2_ver}.tar.*
 sleep 1
 rm -f libssh2-*.tar*
 cd libssh2-*
