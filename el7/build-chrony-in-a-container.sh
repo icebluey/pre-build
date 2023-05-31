@@ -77,8 +77,6 @@ if ! grep -q -i '^1:.*docker' /proc/1/cgroup; then
     exit 1
 fi
 
-rm -fr /usr/lib64/chrony
-
 ############################################################################
 ############################################################################
 ############################################################################
@@ -149,7 +147,6 @@ _build_zlib() {
     rm -fr /tmp/zlib
     /sbin/ldconfig
 }
-_build_zlib
 
 ############################################################################
 ############################################################################
@@ -224,7 +221,6 @@ _build_libssh2() {
     rm -fr /tmp/libssh2
     /sbin/ldconfig
 }
-_build_libssh2
 
 ############################################################################
 ############################################################################
@@ -297,7 +293,7 @@ _build_brotli() {
     rm -fr /tmp/brotli
     /sbin/ldconfig
 }
-_build_brotli
+
 
 ############################################################################
 ############################################################################
@@ -377,7 +373,7 @@ _build_zstd() {
     rm -fr /tmp/zstd
     /sbin/ldconfig
 }
-_build_zstd
+
 
 ############################################################################
 ############################################################################
@@ -462,7 +458,6 @@ _build_p11kit() {
     rm -fr /tmp/p11kit
     /sbin/ldconfig
 }
-_build_p11kit
 
 ############################################################################
 ############################################################################
@@ -539,7 +534,6 @@ _build_nettle() {
     rm -fr /tmp/nettle
     /sbin/ldconfig
 }
-_build_nettle
 
 ############################################################################
 ############################################################################
@@ -625,24 +619,26 @@ _build_gnutls() {
     rm -fr /tmp/gnutls
     /sbin/ldconfig
 }
+
+############################################################################
+############################################################################
+############################################################################
+
+rm -fr /usr/lib64/chrony
+_build_zlib
+_build_brotli
+_build_zstd
+_build_libssh2
+_build_p11kit
+_build_nettle
 bash /opt/gcc/set-static-libstdcxx
 _build_gnutls
 bash /opt/gcc/set-shared-libstdcxx
 
-############################################################################
-############################################################################
-############################################################################
-
-LDFLAGS=''
-LDFLAGS="${_ORIG_LDFLAGS} -Wl,-rpath,/usr/lib64/chrony/private"
-export LDFLAGS
 
 /sbin/ldconfig
-
 _tmp_dir="$(mktemp -d)"
 cd "${_tmp_dir}"
-
-#https://download.tuxfamily.org/chrony/chrony-4.3.tar.gz
 _chrony_ver="$(wget -qO- 'https://chrony.tuxfamily.org/download.html' | grep 'chrony-[1-9].*\.tar' | sed 's|"|\n|g' | sed 's|chrony|\nchrony|g' | grep '^chrony-[1-9]' | sed -e 's|\.tar.*||g' -e 's|chrony-||g' | grep -ivE 'alpha|beta|rc[0-9]|pre' | sort -V | tail -n 1)"
 wget -c -t 9 -T 9 "https://download.tuxfamily.org/chrony/chrony-${_chrony_ver}.tar.gz"
 sleep 1
@@ -650,7 +646,7 @@ tar -xof chrony-*.tar.*
 sleep 1
 rm -f chrony-*.tar*
 cd chrony-*
-
+LDFLAGS='' ; LDFLAGS="${_ORIG_LDFLAGS} -Wl,-rpath,/usr/lib64/chrony/private" ; export LDFLAGS
 ./configure \
 --prefix=/usr \
 --mandir=/usr/share/man \
@@ -685,11 +681,12 @@ install -v -c -m 0644 chronyd.service /tmp/chrony/etc/chrony/chronyd.service
 cd /tmp/chrony/
 rm -fr var/run
 rm -fr run
+_strip_and_zipman
+rm -f /usr/lib64/chrony/private/libgnutlsxx.so*
 install -m 0755 -d usr/lib64/chrony
 install -m 0755 -d usr/lib/NetworkManager/dispatcher.d
 install -m 0755 -d usr/lib/systemd/ntp-units.d
-_strip_and_zipman
-cp -afr /usr/lib64/chrony/private usr/lib64/chrony/
+/bin/cp -afr /usr/lib64/chrony/private usr/lib64/chrony/
 
 _systemd_env_list=''
 _systemd_env_list=(
