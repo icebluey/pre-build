@@ -227,12 +227,12 @@ _build_openssl30() {
         find usr/bin/ -type f -exec file '{}' \; | sed -n -e 's/^\(.*\):[  ]*ELF.*, not stripped.*/\1/p' | xargs --no-run-if-empty -I '{}' /usr/bin/strip '{}'
     fi
     echo
-    install -m 0755 -d usr/lib64/tomcat-native/private
-    cp -af usr/lib64/*.so* usr/lib64/tomcat-native/private/
+    install -m 0755 -d usr/lib64/chrony/private
+    cp -af usr/lib64/*.so* usr/lib64/chrony/private/
     rm -fr /usr/include/openssl
     rm -fr /usr/include/x86_64-linux-gnu/openssl
-    rm -fr /usr/local/openssl-1.1.1
-    rm -f /etc/ld.so.conf.d/openssl-1.1.1.conf
+    #rm -fr /usr/local/openssl-1.1.1
+    #rm -f /etc/ld.so.conf.d/openssl-1.1.1.conf
     sleep 2
     /bin/cp -afr * /
     sleep 2
