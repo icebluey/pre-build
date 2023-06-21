@@ -32,8 +32,8 @@ yum install -y perl perl-devel perl-libs perl-Env perl-ExtUtils-Embed perl-IPC-C
   perl-ExtUtils-Install perl-ExtUtils-MakeMaker perl-ExtUtils-Manifest \
   perl-ExtUtils-ParseXS perl-Git perl-JSON perl-libwww-perl perl-podlators
 
-yum install -y glibc-devel glibc-headers libxml2-devel libxslt-devel \
-  gd-devel perl-devel perl bc net-snmp-libs net-snmp-agent-libs net-snmp-devel
+yum install -y glibc-devel glibc-headers libxml2-devel libxslt-devel gd-devel \
+  perl-devel perl bc net-snmp-libs net-snmp-agent-libs net-snmp-devel libnl3-devel libnl3
 
 yum install -y asciidoc audit-libs-devel bash bc binutils binutils-devel bison bzip2 \
   diffutils elfutils-devel findutils flex gawk gcc gettext git gzip hmaccalc hostname \
