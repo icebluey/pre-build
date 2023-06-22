@@ -50,5 +50,6 @@ yum install -y rsyslog logrotate
 
 /sbin/ldconfig >/dev/null 2>&1
 
-
-
+echo
+echo ' preinstall done'
+echo
