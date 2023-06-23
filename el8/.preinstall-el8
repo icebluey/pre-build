@@ -47,6 +47,10 @@ yum install -y nftables-devel nftables
 yum install -y iptables-devel iptables
 yum install -y ipset-devel ipset
 yum install -y rsyslog logrotate
+yum install -y chrpath
+yum install -y patch
+yum install -y patchelf
+yum install -y glibc-all-langpacks
 
 /sbin/ldconfig >/dev/null 2>&1
 
