@@ -14,7 +14,8 @@ dnf upgrade -y
 
 yum install -y openssl-libs
 yum install -y openssl
-yum install -y openssl-devel lksctp-tools-devel lksctp-tools
+yum install -y openssl-devel
+yum install -y lksctp-tools-devel lksctp-tools
 
 yum install -y gcc cpp gcc-c++ libstdc++-devel make m4 libtool pkgconfig groff-base \
   glibc-devel glib2-devel systemd-devel libuuid-devel \
@@ -55,6 +56,10 @@ yum install -y chrpath
 yum install -y patch
 yum install -y patchelf
 yum install -y glibc-all-langpacks
+
+# For building kernel 6.4
+yum install -y libpfm-devel libpfm
+yum install -y libtraceevent-devel libtraceevent
 
 yum install -y dracut ; yum update -y dracut
 echo 'diff --git a/module-setup.sh b/module-setup.sh
