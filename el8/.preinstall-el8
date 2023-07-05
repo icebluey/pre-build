@@ -57,9 +57,10 @@ yum install -y patch
 yum install -y patchelf
 yum install -y glibc-all-langpacks
 
-# For building kernel 6.4
+# For building kernel
 yum install -y libpfm-devel libpfm
 yum install -y libtraceevent-devel libtraceevent
+yum install -y libbpf-devel libbabeltrace-devel
 
 yum install -y dracut ; yum update -y dracut
 echo 'diff --git a/module-setup.sh b/module-setup.sh
