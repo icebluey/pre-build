@@ -66,6 +66,8 @@ yum install -y libpfm-devel libpfm
 yum install -y libtraceevent-devel libtraceevent
 yum install -y libbpf-devel libbabeltrace-devel
 
+yum install -y cmake
+
 yum install -y dracut ; yum update -y dracut
 echo 'diff --git a/module-setup.sh b/module-setup.sh
 index 38c244a..850bec7 100755
